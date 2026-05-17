@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cesium Playground</title>
+
+  <!-- CesiumJS vi CDN (Content Delivery Network > réseau de serveurs qui hébergent les fichiers statiques) : la librairie et ses styles -->
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.117/Build/Cesium/Cesium.js"></script>
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.117/Build/Cesium/Widgets/widgets.css" rel="stylesheet" />
+
+  <style>
+	/* le globe doit occupé toute la fenêtre */
+	html, body {
+	  margin: 0;
+	  padding: 0;
+	  width: 100%;
+	  height: 100%;
+	  overflow: hidden;
+	}
+
+	#cesiumContainer {
+	  width: 100%;
+	  height: 100%;
+	}
+  </style>
+</head>
+<body>
+
+  <!-- CesiumJs va injecter le rendu 3D dans ce div -->
+  <div id="cesiumContainer"></div>
+
+  <script>
+	// Le token Cesium Ion
+	Cesium.Ion.defaultAccessToken = 'TOKKEN_ICI';
+
+	// Viewer = le globe complet avec tout les contrôles par défaut
+	const viewer = new Cesium.Viewer('cesiumContainer');
+  </script>
+</body>
+</html>
