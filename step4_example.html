@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cesium Playground</title>
+
+  <!-- CesiumJS vi CDN (Content Delivery Network > réseau de serveurs qui hébergent les fichiers statiques) : la librairie et ses styles -->
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.117/Build/Cesium/Cesium.js"></script>
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.117/Build/Cesium/Widgets/widgets.css" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/satellite.js/4.0.0/satellite.min.js"></script>
+
+  <style>
+	/* le globe doit occupé toute la fenêtre */
+	html, body {
+	  margin: 0;
+	  padding: 0;
+	  width: 100%;
+	  height: 100%;
+	  overflow: hidden;
+	}
+
+	#cesiumContainer {
+	  width: 100%;
+	  height: 100%;
+	}
+  </style>
+</head>
+<body>
+
+  <!-- CesiumJs va injecter le rendu 3D dans ce div -->
+  <div id="cesiumContainer"></div>
+
+  <script>
+	// Mon token Cesium Ion
+	Cesium.Ion.defaultAccessToken = 'TOKKEN_ICI';
+
+	// Viewer = le globe complet avec tout les contrôles par défaut
+	const viewer = new Cesium.Viewer('cesiumContainer');
+
+    	// TLE de l'ISS
+	const tle1 = '1 25544U 98067A   24087.54791667  .00008821  00000-0  16048-3 0  9994';
+	const tle2 = '2 25544  51.6416 290.4846 0004543 218.3974 141.6745 15.49698198445467';
+
+	// Caluculer de position
+	const satrec = satellite.twoline2satrec(tle1, tle2);
+	const now = new Date();
+	const positionAndVelocity = satellite.propagate(satrec, now);
+	const positionEci = positionAndVelocity.position;
+	const gmst = satellite.gstime(now);
+	const geo = satellite.eciToGeodetic(positionEci, gmst);
+
+	const longitude = satellite.degreesLong(geo.longitude);
+	const latitude = satellite.degreesLat(geo.latitude);
+	const altitude = geo.height * 1000;  // en km
+
+	// Affichage sur le globe
+	viewer.entities.add({
+	  name: 'ISS',
+	  position: Cesium.Cartesian3.fromDegrees(longitude, latitude, altitude),
+	  point: {
+		pixelSize: 12,
+		color: Cesium.Color.YELLOW,
+	  },
+	  label: {
+		text: 'ISS',
+		font: '14px sans-serif',
+		verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+	  }
+	});
+
+    viewer.zoomTo(viewer.entities);
+
+  </script>
+</body>
+</html>
