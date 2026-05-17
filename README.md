@@ -22,8 +22,8 @@ This sandbox prepares the integration of the `SatelliteViewer.vue` component int
 | 2 | Place a fixed point on the globe (manual position) | ✅ Done |
 | 3 | Load TLE data and compute a position with satellite.js | ✅ Done |
 | 4 | Display a real satellite on the globe (ISS) | ✅ Done |
-| 5 | Display multiple satellites from a Celestrak group | 🔧 In progress |
-| 6 | Add a time slider (move forward/backward in time) | ⏳ Upcoming |
+| 5 | Display multiple satellites from a Celestrak group | ✅ Done |
+| 6 | Add a time slider (move forward/backward in time) | 🔧 In progress |
 | 7 | Connect the globe to the Orekit FastAPI TLE endpoint | ⏳ Upcoming |
 
 ---
