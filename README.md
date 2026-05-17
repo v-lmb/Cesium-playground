@@ -19,8 +19,8 @@ This sandbox prepares the integration of the `SatelliteViewer.vue` component int
 | Step | Description | Status |
 |------|-------------|--------|
 | 1 | Display a CesiumJS globe in a simple HTML page | ✅ Done |
-| 2 | Place a fixed point on the globe (manual position) | 🔧 In progress |
-| 3 | Load TLE data and compute a position with satellite.js | ⏳ Upcoming |
+| 2 | Place a fixed point on the globe (manual position) | ✅ Done |
+| 3 | Load TLE data and compute a position with satellite.js | 🔧 In progress |
 | 4 | Display a real satellite on the globe (ISS) | ⏳ Upcoming |
 | 5 | Display multiple satellites from a Celestrak group | ⏳ Upcoming |
 | 6 | Add a time slider (move forward/backward in time) | ⏳ Upcoming |
