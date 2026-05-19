@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cesium Playground</title>
+
+  <!-- CesiumJS vi CDN (Content Delivery Network > réseau de serveurs qui hébergent les fichiers statiques) : la librairie et ses styles -->
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.117/Build/Cesium/Cesium.js"></script>
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.117/Build/Cesium/Widgets/widgets.css" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/satellite.js/4.0.0/satellite.min.js"></script>
+
+  <style>
+	/* le globe doit occupé toute la fenêtre */
+	html, body {
+	  margin: 0;
+	  padding: 0;
+	  width: 100%;
+	  height: 100%;
+	  overflow: hidden;
+	}
+
+	#cesiumContainer {
+	  width: 100%;
+	  height: 100%;
+	}
+  </style>
+</head>
+<body>
+
+  <!-- CesiumJs va injecter le rendu 3D dans ce div -->
+  <div id="cesiumContainer"></div>
+
+  <script>
+	// Mon token Cesium Ion
+	Cesium.Ion.defaultAccessToken = 'TOKKEN_ICI';
+	const viewer = new Cesium.Viewer('cesiumContainer', {
+      shouldAnimate: true
+    });
+
+    const start = Cesium.JulianDate.fromDate(new Date());
+    const stop = Cesium.JulianDate.addHours(start, 2, new Cesium.JulianDate());
+
+    viewer.clock.startTime = start.clone();
+    viewer.clock.stopTime = stop.clone();
+    viewer.clock.currentTime = start.clone();
+    viewer.clock.clockRange = Cesium.ClockRange.LOOP_STOP;
+    viewer.clock.multiplier = 60;
+    viewer.timeline.zoomTo(start, stop);
+
+    async function loadFromAPI() {
+      // 1. Récupérer les satellites depuis ton API
+      const response = await fetch('http://localhost:8000/satellites/');
+      const satellites_data = await response.json();
+
+      // 2. Pour chaque satellite, calculer la trajectoire et l'afficher
+      for (const sat of satellites_data) {
+        const satrec = satellite.twoline2satrec(sat.line1, sat.line2);
+        const positionProperty = new Cesium.SampledPositionProperty();
+
+        for (let m = 0; m <= 120; m++) {
+          const time = Cesium.JulianDate.addMinutes(start, m, new Cesium.JulianDate());
+          const jsDate = Cesium.JulianDate.toDate(time);
+
+          const pv = satellite.propagate(satrec, jsDate);
+          if (!pv.position) continue;
+
+          const gmst = satellite.gstime(jsDate);
+          const geo = satellite.eciToGeodetic(pv.position, gmst);
+
+          positionProperty.addSample(
+            time,
+            Cesium.Cartesian3.fromDegrees(
+              satellite.degreesLong(geo.longitude),
+              satellite.degreesLat(geo.latitude),
+              geo.height * 1000
+            )
+          );
+        }
+
+        viewer.entities.add({
+          name: sat.name,
+          availability: new Cesium.TimeIntervalCollection([
+            new Cesium.TimeInterval({ start, stop })
+          ]),
+          position: positionProperty,
+          point: {
+            pixelSize: 10,
+            color: Cesium.Color.LIME,
+          },
+          path: {
+            resolution: 120,
+            material: new Cesium.PolylineDashMaterialProperty({
+              color: Cesium.Color.LIME.withAlpha(0.4),
+            }),
+            width: 1,
+          }
+        });
+      }
+
+      viewer.zoomTo(viewer.entities);
+    }
+
+    loadFromAPI();
+
+  </script>
+</body>
+</html>
