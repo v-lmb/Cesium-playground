@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cesium Playground</title>
+
+  <!-- CesiumJS vi CDN (Content Delivery Network > réseau de serveurs qui hébergent les fichiers statiques) : la librairie et ses styles -->
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.117/Build/Cesium/Cesium.js"></script>
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.117/Build/Cesium/Widgets/widgets.css" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/satellite.js/4.0.0/satellite.min.js"></script>
+
+  <style>
+	/* le globe doit occupé toute la fenêtre */
+	html, body {
+	  margin: 0;
+	  padding: 0;
+	  width: 100%;
+	  height: 100%;
+	  overflow: hidden;
+	}
+
+	#cesiumContainer {
+	  width: 100%;
+	  height: 100%;
+	}
+  </style>
+</head>
+<body>
+
+  <!-- CesiumJs va injecter le rendu 3D dans ce div -->
+  <div id="cesiumContainer"></div>
+
+  <script>
+	// Mon token Cesium Ion
+	Cesium.Ion.defaultAccessToken = 'TOKKEN_ICI';
+	const viewer = new Cesium.Viewer('cesiumContainer', {
+	  shouldAnimate: true // active l'animation automatique
+	});
+
+	// TLE de l'ISS
+	const tle1 = '1 25544U 98067A   24087.54791667  .00008821  00000-0  16048-3 0  9994';
+	const tle2 = '2 25544  51.6416 290.4846 0004543 218.3974 141.6745 15.49698198445467';
+
+	const satrec = satellite.twoline2satrec(tle1, tle2);
+
+	// 1. Définir la fenetre temporelle : maintenat + 2h
+	const start = Cesium.JulianDate.fromDate(new Date());
+	const stop = Cesium.JulianDate.addHours(start, 2, new Cesium.JulianDate());
+
+	// Brancher la timeline sur cette fenetre
+	viewer.clock.startTime = start.clone();
+	viewer.clock.stopTime = stop.clone();
+	viewer.clock.currentTime = start.clone();
+	viewer.clock.clockRange = Cesium.ClockRange.LOOP_STOP;
+	viewer.clock.multiplier = 60;   // 1 sec réelle = 60 sec simulées
+	viewer.timeline.zoomTo(start, stop);
+
+	// 2. créer un SampledPositionProperty et le remplir
+	const positionProperty = new Cesium.SampledPositionProperty();
+
+	// Calculer une position toutes les minutes sur 2h
+	for (let m = 0; m <= 120; m++) {
+	  const time = Cesium.JulianDate.addMinutes(start, m , new Cesium.JulianDate());
+	  const jsDate = Cesium.JulianDate.toDate(time);
+
+	  const pv = satellite.propagate(satrec, jsDate);
+	  if (!pv.position) continue;
+
+	  const gmst = satellite.gstime(jsDate);
+	  const geo = satellite.eciToGeodetic(pv.position, gmst);
+
+	  const longitude = satellite.degreesLong(geo.longitude);
+	  const latitude = satellite.degreesLat(geo.latitude);
+	  const altitude = geo.height * 1000;  // en km
+
+	  positionProperty.addSample(time, Cesium.Cartesian3.fromDegrees(longitude, latitude, altitude));
+	}
+
+
+	  // 3. Ajouter chaque satellites sur le globe
+	  viewer.entities.add({
+		name: 'ISS',
+		availability: new Cesium.TimeIntervalCollection([
+		  new Cesium.TimeInterval({ start, stop })
+		]),
+		position: positionProperty,
+		point: {
+		  pixelSize: 12,
+		  color: Cesium.Color.YELLOW,
+		},
+		label: {
+		  text: 'ISS',
+		  font: '14px sans-serif',
+		  verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+		},
+		// Tracer la trajectoire
+		path: {
+		  resolution: 120,
+		  material: new Cesium.PolylineDashMaterialProperty({
+			color: Cesium.Color.YELLOW.withAlpha(0.5),
+		  }),
+		  width: 1,
+		}
+	  });
+
+    viewer.zoomTo(viewer.entities);
+
+  </script>
+</body>
+</html>
